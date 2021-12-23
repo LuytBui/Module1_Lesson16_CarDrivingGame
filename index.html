@@ -1,0 +1,171 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Car Driving</title>
+    <script src="car.js"></script>
+    <script src="obstacle.js"></script>
+    <script src="coin.js"></script>
+</head>
+<body>
+<canvas width="1200" height="800" id="canvas" style="border: 1px solid"></canvas>
+<h1 id="score"></h1>
+<script>
+    let canvas, ctx, obstacleList, myCar, coinList;
+
+    // khoi tao cac bien
+    init();
+    update();
+
+    function init() {
+        score = 0;
+        canvas = document.getElementById('canvas');
+        ctx = canvas.getContext('2d');
+        window.addEventListener('keydown', keyDown);
+
+        let imageRatio = 512 / 275;
+        let myCarWidth = 120;
+        let myCarHeight = myCarWidth / imageRatio;
+        myCar = new Car('img/red-car-top-view.png', 50, 300, myCarWidth, myCarHeight, 10);
+
+
+        obstacleList = [];
+        for (let i = 0; i < 10; i++) {
+            makeOneNewObstacle();
+        }
+
+        coinList = [];
+        for (let i = 0; i < 4; i++) {
+            makeOneNewCoin();
+        }
+
+    }
+
+
+    function update() {
+        document.getElementById('score').innerText = `Score: ${score}`;
+        clearCanvas();
+        drawBackground();
+        myCar.drawCar(ctx);
+        for (let i = 0; i < obstacleList.length; i++) {
+            obstacleList[i].drawObstacle(ctx);
+        }
+
+        for (let i = 0; i < coinList.length; i++) {
+            coinList[i].drawCoin(ctx);
+        }
+
+        checkForCoins();
+        checkForObstacle();
+        refreshCoin();
+    }
+
+    function makeOneNewCoin() {
+        let coinRadius = 30;
+        let coinColor = 'yellow';
+        let coin = new Coin(
+            randomCoordinate(canvas.width, coinRadius),
+            randomCoordinate(canvas.height, coinRadius),
+            coinRadius, coinColor
+        );
+        coinList.push(coin);
+    }
+
+    function refreshCoin() {
+        if (coinList.length < 5) {
+            coinList.pop();
+            makeOneNewCoin();
+            makeOneNewCoin();
+        }
+    }
+
+    function makeOneNewObstacle() {
+        let obstacleWidth = 50;
+        let obstacleHeight = 50;
+
+        let obstacle = new Obstacle(
+            randomCoordinate(canvas.width, obstacleWidth),
+            randomCoordinate(canvas.height, obstacleHeight),
+            obstacleWidth, obstacleHeight, 'blue'
+        );
+        obstacleList.push(obstacle);
+    }
+
+    function checkForCoins() {
+        for (let i = 0; i < coinList.length; i++) {
+            let coin = coinList[i];
+            if (Math.abs(myCar.x - coin.x) < myCar.width / 2 + coin.radius &&
+                Math.abs(myCar.y - coin.y) < myCar.width / 2 + coin.radius
+            ) {
+                score += 100;
+                coinList.splice(coinList.indexOf(coin), 1);
+            }
+        }
+    }
+
+    function checkForObstacle() {
+        for (let i = 0; i < obstacleList.length; i++) {
+            let obstacle = obstacleList[i];
+            let hitObstacle = false;
+
+            if (myCar.orientation === 'up' || myCar.orientation === 'down'){
+                hitObstacle = (Math.abs(myCar.x - obstacle.x) < (myCar.height + obstacle.width) / 2) &&
+                    (Math.abs(myCar.y - obstacle.y) < (myCar.width + obstacle.height) / 2);
+            } else {  // orientation == left or right
+                hitObstacle = (Math.abs(myCar.x - obstacle.x) < (myCar.width + obstacle.width) / 2) &&
+                    (Math.abs(myCar.y - obstacle.y) < (myCar.height + obstacle.height) / 2);
+            }
+
+            if (hitObstacle) {
+                gameOver();
+            }
+        }
+    }
+
+    function randomCoordinate(canvasDimension, objectDimension) {
+        return objectDimension / 2 + Math.random() * (canvasDimension - objectDimension / 2);
+    }
+
+    function gameOver() {
+        alert('Game over');
+        init();
+    }
+
+    function keyDown(evt) {
+        switch (evt.keyCode) {
+            case 37:
+                myCar.moveLeft();
+                break;
+            case 39:
+                myCar.moveRight();
+                break;
+            case 38:
+                myCar.moveUp();
+                break;
+            case 40:
+                myCar.moveDown();
+                break;
+            case 17:
+                myCar.speedUp();
+                break;
+            case 16:
+                myCar.speedDown();
+                break;
+        }
+        update();
+    }
+
+
+    function drawBackground() {
+        ctx.fillStyle = '#545b63';
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+    }
+
+    function clearCanvas() {
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+    }
+
+</script>
+
+</body>
+</html>
